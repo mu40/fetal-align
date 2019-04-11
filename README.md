@@ -29,7 +29,7 @@ localized eye and brain centers.
 
 The IO scripts included in [freesurfer](freesurfer) are distributed under the
 FreeSurfer Software License Agreement. See https://surfer.nmr.mgh.harvard.edu
-and [freesurfer/LICENSE](freesurfer/LICENSE) for details.
+and [freesurfer/LICENSE.txt](freesurfer/LICENSE.txt) for details.
 
 ## References
 
