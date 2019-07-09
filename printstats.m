@@ -3,7 +3,8 @@
 addpath freesurfer
 [data,ga,b_manvox,e1manvox,e2manvox] = loaddata();
 
-successful = setdiff(1:43, [34 41]); % Exclude failures.
+numdat = numel(data);
+successful = setdiff(1:numdat, [34 41]); % Exclude failures.
 numdat = numel(successful);
 [magrot,magtra,mag_e1,mag_e2] = deal(zeros(numdat, 1));
 [xtra,ytra,ztra,xrot,yrot,zrot] = deal(zeros(numdat, 1));

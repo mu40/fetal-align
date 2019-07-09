@@ -43,8 +43,6 @@ data{38} = 'data/ep2d_38.nii.gz';
 data{39} = 'data/ep2d_39.nii.gz';
 data{40} = 'data/ep2d_40.nii.gz';
 data{41} = 'data/ep2d_41.nii.gz';
-data{42} = 'data/haste_01.nii.gz';
-data{43} = 'data/haste_02.nii.gz';
 
 % Gestational age.
 ga( 1) = 31;   
@@ -88,8 +86,6 @@ ga(38) = 33;
 ga(39) = 33;   
 ga(40) = 29.43;
 ga(41) = 29.43;
-ga(42) = 31;
-ga(43) = 35;
 
 % Voxel coordinates determined with FreeView.
 bman{ 1} = [ 62  86 28]; e1man{ 1} = [ 70  89 37]; e2man{ 1} = [ 62  96 36];
@@ -133,8 +129,6 @@ bman{38} = [ 69  95 17]; e1man{38} = [ 60  82 21]; e2man{38} = [ 71  79 19];
 bman{39} = [ 95 100 24]; e1man{39} = [ 78  99 25]; e2man{39} = [ 82  97 17];
 bman{40} = [ 74  98 26]; e1man{40} = [ 73  84 25]; e2man{40} = [ 72  88 19];
 bman{41} = [ 72  99 28]; e1man{41} = [ 75  86 30]; e2man{41} = [ 67  87 26];
-bman{42} = [ 38 130 23]; e1man{42} = [ 70 117 23]; e2man{42} = [ 65 121 16];
-bman{43} = [130 190 24]; e1man{43} = [162 183 18]; e2man{43} = [164 191 27];
 
 % FreeSurfer/FreeView starts counting voxels at 0, we do at 1.
 bman = cellfun(@(x)x+1, bman, 'uniformoutput', 0);
