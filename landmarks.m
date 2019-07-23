@@ -1,8 +1,11 @@
 % Estimate center of fetal brain and largest slices from 2D-EPI scout.
-function [bcenout,ecenout,outmask] = landmarks(mri, ga, doplot)
+function [bcenout,ecenout,outmask] = landmarks(mri, ga, doplot, par)
 
 if nargin() < 3
     doplot = [];
+end
+if nargin() < 4
+    par = [];
 end
 
 if ischar(mri)
@@ -42,34 +45,41 @@ end
 %% Stage 1.
 
 % MSERs and filtering.
-maxarea = pi * bpd/2 * ofd/2 / prod(vsz(1:2));
-[bw, numbw, snum] = slcmser(pre, 5, maxarea*0.2, maxarea*1.0);
+par = setdefault(par, 'maxratio1', 1.5, 'minarea1', 0.2, 'maxarea1', 1.1, ...
+    'maxsemi1', 1.1, 'minfill1', 0.5);
+refarea = pi * bpd/2 * ofd/2 / prod(vsz(1:2));
+[bw, numbw, snum] = slcmser(pre, 5, refarea*par.minarea1, refarea*par.maxarea1);
 [cen,semi,rot,~,inside,outside] = fitellipse(bw); %#ok
 ratio = semi(:,1) ./ semi(:,2);
 area = pi * prod(semi, 2);
 keep = true(numbw, 1);
-keep = keep & ratio < ofd/bpd * 1.5;
-keep = keep & area < maxarea * 1.1;
-keep = keep & semi(:,1)*vsz(1) < ofd/2 * 1.1;
-keep = keep & inside-outside > 0.5;
+keep = keep & ratio < ofd/bpd * par.maxratio1;
+keep = keep & area > refarea * par.minarea1;
+keep = keep & area < refarea * par.maxarea1;
+keep = keep & semi(:,1)*vsz(1) < ofd/2 * par.maxsemi1;
+keep = keep & inside-outside > par.minfill1;
 
 % Mean-shift clustering: remove near-duplicate points first.
+par = setdefault(par, 'minsep1', 1, 'diam1', 1, 'steptol1', 0.1);
 points = [cen(keep,:) snum(keep)] .* vsz;
 i = 1;
 while i <= size(points,1)
-    ind = sqrt(sum((points(i,:)-points).^2,2)) < 1; % In mm.
+    ind = sqrt(sum((points(i,:)-points).^2,2)) < par.minsep1; % In mm.
     ind(i) = 0;
     points(ind,:) = [];
     i = i + 1;
 end
-[clusters,numclust] = meanshift(points, ofd, 0.1);
+[clusters,numclust] = meanshift(points, par.diam1*ofd, par.steptol1, ...
+    par.minsep1);
 if isfield(doplot, 'clust1') && doplot.clust1
     wait('Brain localization: mean-shift clustering of MSER centers', ...
         'before cluster selection');
-    showclust(points, clusters, ofd);
+    showclust(points, clusters, par.diam1*ofd);
 end
 
 % Cluster selection.
+par = setdefault(par, 'rad1', 1);
+len = ofd/2 * par.rad1;
 xyz = ndarray([1 1 1], dim) .* vsz;
 ind1d = reshape(1:prod(dim), dim);
 points = [cen snum] .* vsz;
@@ -78,18 +88,18 @@ linedist = cell(numclust, 1);
 for i = 1:numclust
     centroid = clusters(i,:);
     dist = sqrt(sum((centroid-points).^2, 2));
-    ind = find(keep & dist<ofd/2);
+    ind = find(keep & dist<len);
     volmask = false(dim);
     for j = ind'
         volmask(:,:,snum(j)) = volmask(:,:,snum(j)) | bw{j};
     end
-    low = floor((centroid-ofd/2) ./ vsz);
-    upp = ceil((centroid+ofd/2) ./ vsz);
+    low = floor((centroid-len) ./ vsz);
+    upp = ceil((centroid+len) ./ vsz);
     low = max(1, low);
     upp = min(dim, upp);
     subset = ind1d(low(1):upp(1),low(2):upp(2),low(3):upp(3));
     sphere = false(dim);
-    insphere = sqrt(sum((xyz(subset,:)-centroid).^2, 2)) < ofd/2;
+    insphere = sqrt(sum((xyz(subset,:)-centroid).^2, 2)) < len;
     sphere(subset) = insphere;
     numvoxin(i) = nnz(sphere & volmask);
     numvoxout(i) = nnz(~sphere & volmask);
@@ -104,17 +114,17 @@ centroid = clusters(order(1),:);
 linedist = linedist{order(1)};
 dist = sqrt(sum((centroid-points(keep,:)).^2, 2));
 keeppreclust = keep; %#ok
-keep(keep) = dist < ofd/2;
+keep(keep) = dist < len;
 
 % Filter distance from line fit.
 zscore = (linedist-mean(linedist)) / std(linedist);
-zlim = 3;
 keeppreline = keep;
-keep(keep) = zscore < zlim;
+par = setdefault(par, 'zline1', 3);
+keep(keep) = zscore < par.zline1;
 if isfield(doplot, 'line1') && doplot.line1
     wait('Brain localization: rejection of MSERs based on the distance', ...
         'to a line fitted through their centers');
-    showfit(snum(keeppreline), semi(keeppreline,1), zscore, zlim);
+    showfit(snum(keeppreline), semi(keeppreline,1), zscore, par.zline1);
 end
 if isfield(doplot, 'mser1') && doplot.mser1
     wait('Brain localization: retained MSERs on each slice before', ...
@@ -150,18 +160,22 @@ boxdim = size(boxdat);
 rawloc = rawloc - boxshift;
 
 % MSER detection and filtering.
-maxarea = pi * bpd/2 * ofd/2 / prod(vsz(1:2));
-[bw, numbw, snum] = slcmser(boxdat, 5, maxarea*0.05, maxarea*1.1);
+par = setdefault(par, 'maxratio2', 1.5, 'minarea2', 0.05, 'maxarea2', 1.1, ...
+    'maxsemi2', 1.1, 'minfill2', 0.5, 'maxdist2', 1.1);
+refarea = pi * bpd/2 * ofd/2 / prod(vsz(1:2));
+[bw, numbw, snum] = slcmser(boxdat, 5, refarea*par.minarea2, ...
+    refarea*par.maxarea2);
 [cen,semi,~,~,inside,outside] = fitellipse(bw);
 ratio = semi(:,1) ./ semi(:,2);
 area = pi * prod(semi, 2);
 dist = sqrt(sum((vsz.*([cen snum]-rawloc)).^2, 2));
 keep = true([numbw 1]);
-keep = keep & ratio < ofd/bpd * 1.5;
-keep = keep & area < maxarea * 1.1;
-keep = keep & semi(:,1)*vsz(1) < ofd/2 * 1.1;
-keep = keep & inside-outside > 0.5;
-keep = keep & dist < ofd/2 * 1.1;
+keep = keep & ratio < ofd/bpd * par.maxratio2;
+keep = keep & area > refarea * par.minarea2;
+keep = keep & area < refarea * par.maxarea2;
+keep = keep & semi(:,1)*vsz(1) < ofd/2 * par.maxsemi2;
+keep = keep & inside-outside > par.minfill2;
+keep = keep & dist < ofd/2 * par.maxdist2;
 if isfield(doplot, 'mser2') && doplot.mser2
     wait('Brain-mask creation: pre-filtered MSERs on each slice before', ...
         'addition to the preliminary brain mask');
@@ -186,29 +200,30 @@ scen = [scen slcind];
 % Fit line to average centers.
 [~,~,dist] = fitline(scen .* vsz);
 zscoreline = (dist-mean(dist)) / std(dist);
-zlimline = 2;
+par = setdefault(par, 'zline2', 2);
 [scenpreline, ssemipreline] = deal(scen, ssemi);
-ind = zscoreline < zlimline;
+ind = zscoreline < par.zline2;
 volmask(:,:,scen(~ind,3)) = 0;
 [scen, ssemi] = deal(scen(ind,:), ssemi(ind,:));
 if isfield(doplot, 'line2') && doplot.line2
     wait('Brain-mask creation: rejection of brain-mask slices based on', ...
         'the distance to a line fitted through their centers');
-    showfit(scenpreline(:,3), ssemipreline(:,1), zscoreline, zlimline);
+    showfit(scenpreline(:,3), ssemipreline(:,1), zscoreline, par.zline2);
 end
 
 % Fit polynomial to average axes.
-polywithin = ofd/vsz(3)/2 * 0.5;
+par = setdefault(par, 'polywithin2', 0.5);
+polywithin = ofd/vsz(3)/2 * par.polywithin2;
 ind = abs(scen(:,3)-boxloc(3)) < polywithin;
 xdat = scen(ind,3);
 ydat = ssemi(ind,1);
 coef = polyfit(xdat, ydat, 2);
 dist = ssemi(:,1) - polyval(coef, scen(:,3));
 zscorepoly = (dist-mean(dist(ind))) / std(dist);
-zlimpoly = 1.5;
+par = setdefault(par, 'zpoly2', 1.5);
 [scenprepoly, ssemiprepoly, boxlocprepoly] = deal(scen, ssemi, boxloc); %#ok
 if coef(1) < 0 % Want bad weather.
-    ind = zscorepoly < zlimpoly;
+    ind = zscorepoly < par.zpoly2;
     volmask(:,:,scen(~ind,3)) = 0;
     scen = scen(ind,:); %#ok
     ssemi = ssemi(ind,:); %#ok
@@ -217,7 +232,7 @@ if isfield(doplot, 'poly2') && doplot.poly2
     wait('Brain-mask creation: rejection of brain-mask slices based on', ...
         'the deviation between their major-axis length and a quadratic', ...
         'fit across slices');
-    showfit(scenprepoly(:,3), ssemiprepoly(:,1), zscorepoly, zlimpoly, ...
+    showfit(scenprepoly(:,3), ssemiprepoly(:,1), zscorepoly, par.zpoly2, ...
         coef, boxloc(3)+[-1 1]*polywithin);
 end
 
@@ -244,9 +259,8 @@ end
 %% Stage 3.
 
 % Image cropping and interpolation.
-% low = max(1, floor(rawloc-halflen));
-% upp = min(dim, floor(rawloc+halflen));
-boxvsz = [1.49 1.49 vsz(3)];
+par = setdefault(par, 'voxsize3', 1.49);
+boxvsz = [par.voxsize3 par.voxsize3 vsz(3)];
 lenvox = floor(sqrt(2) * ofd ./ boxvsz); % Side length in new voxels.
 scaledown = boxvsz ./ vsz;
 shift = bcenvox - (lenvox+1)/2 .* scaledown; % In old voxels.
@@ -266,8 +280,12 @@ boxloc = boxtofull \ [bcenvox 1]';
 boxloc = boxloc(1:3)';
 
 % MSER detection and filtering.
-maxarea = pi * (odiam/2)^2 / prod(boxvsz(1:2)); % In voxels.
-[bw, numbw, snum] = slcmser(boxdat, 5, maxarea*0.5, maxarea*1.1);
+par = setdefault(par, 'maxratio3', 1.5, 'minarea3', 0.5, 'maxarea3', 1.1, ...
+    'maxsemi3', 1.3, 'minfill3', 0.8, 'mindist3', 0.5, 'maxdist3', 1.5, ...
+    'mindrop3', 0.5, 'int3', 0.5);
+refarea = pi * (odiam/2)^2 / prod(boxvsz(1:2)); % In voxels.
+[bw, numbw, snum] = slcmser(boxdat, 5, refarea*par.minarea3, ...
+    refarea*par.maxarea3);
 [cen,semi,rot,ell,inside,outside] = fitellipse(bw); %#ok
 ratio = semi(:,1) ./ semi(:,2);
 area = pi * prod(semi, 2);
@@ -276,20 +294,19 @@ drop = zeros(numbw, 1);
 for i = 1:numbw
     im = boxdat(:,:,snum(i));
     inribbon = find(ellbig{i} & ~ell{i});
-    threshold = 0.5 * median(im(ell{i}(:)));
+    threshold = par.int3 * median(im(ell{i}(:)));
     drop(i) = nnz(im(inribbon) < threshold) / numel(inribbon);
 end
 dist = sqrt(sum((boxvsz .* ([cen snum]-boxloc)).^2, 2));
-
-% Individual filtering.
 keep = true(numbw, 1);
-keep = keep & ratio < 1.5;
-keep = keep & area < maxarea * 1.1;
-keep = keep & semi(:,1).*boxvsz(1) < odiam/2 * 1.3;
-keep = keep & inside-outside > 0.8;
-keep = keep & drop > 0.5;
-keep = keep & dist > ofd/2 * 0.5;
-keep = keep & dist < ofd/2 * 1.5;
+keep = keep & ratio < par.maxratio3;
+keep = keep & area > refarea * par.minarea3;
+keep = keep & area < refarea * par.maxarea3;
+keep = keep & semi(:,1).*boxvsz(1) < odiam/2 * par.maxsemi3;
+keep = keep & inside-outside > par.minfill3;
+keep = keep & drop > par.mindrop3;
+keep = keep & dist > ofd/2 * par.mindist3;
+keep = keep & dist < ofd/2 * par.maxdist3;
 if isfield(doplot, 'mser3') && doplot.mser3
     wait('Eye detection: pre-filtered MSERs on each slice before 3D', ...
         'clustering');
@@ -297,6 +314,7 @@ if isfield(doplot, 'mser3') && doplot.mser3
 end
 
 % Clusters of points in 3D.
+par = setdefault(par, 'group3', 0.7);
 ind = find(keep);
 cluster = arrayfun(@(p)p, ind, 'uniformoutput', 0);
 numclust = numel(cluster);
@@ -304,7 +322,7 @@ for i = 1:numclust
     cen1 = [cen(ind(i),:) snum(ind(i))] .* boxvsz;
     for j = 1:numclust
         cen2 = [cen(ind(j),:) snum(ind(j))] .* boxvsz;
-        if i ~= j && sqrt(sum((cen1-cen2).^2)) < odiam*0.7
+        if i ~= j && sqrt(sum((cen1-cen2).^2)) < odiam*par.group3
             cluster{i} = [cluster{i} ind(j)];
         end
     end
@@ -358,6 +376,7 @@ for  i = 1:numclust
 end
 
 % Centroid pair scores.
+par = setdefault(par, 'lambda3', 3, 'angle3', 40);
 numpair = numclust*(numclust-1)/2;
 score = zeros([numpair 1]);
 pair = zeros([numpair 2]);
@@ -367,9 +386,9 @@ for i = 1:numclust
     for j = i+1:numclust
         tmp = 0;
         tmp = tmp + 1.0 * fun(mean(bdismm([i j]))/(ofd/2) - 1);
-        tmp = tmp + 3.0 * fun((bdismm(i)-bdismm(j))/mean(bdismm([i j])));
+        tmp = tmp + fun((bdismm(i)-bdismm(j))/mean(bdismm([i j])))*par.lambda3;
         tmp = tmp + 1.0 * fun(edismm(i,j)/odist - 1);
-        tmp = tmp + 1.0 * fun(ang(i,j)/40 - 1);
+        tmp = tmp + 1.0 * fun(ang(i,j)/par.angle3 - 1);
         tmp = tmp + 1.0 * fun(mean(quality([i j]))/max(quality) - 1);
         tmp = tmp + 1.0 * fun(mean(numslc([i j]))/max(numslc) - 1);
         score(n) = tmp;

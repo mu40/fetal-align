@@ -1,7 +1,10 @@
-function [clusters,numclust] = meanshift(points, diam, steptol)
+function [clusters,numclust] = meanshift(points, diam, steptol, minsep)
 
 if nargin() < 3
     steptol = 0.1;
+end
+if nargin() < 4
+    minsep = 1;
 end
 numdim = size(points, 2);
 
@@ -38,7 +41,7 @@ end
 % Remove near-duplicate clusters.
 i = 1;
 while i <= numclust
-    ind = sqrt(sum((clusters(i,:)-clusters).^2,2)) < 10*steptol;
+    ind = sqrt(sum((clusters(i,:)-clusters).^2,2)) < minsep;
     ind(i) = 0;
     clusters(ind,:) = [];
     numclust = size(clusters, 1);
