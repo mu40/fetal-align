@@ -1,7 +1,7 @@
 % Reconstruct fetal cordinate system and return tranfrom from it to RAS
 % space. Attempt to fix left/right eye labels if necessary.
-function [fettoras, lcenvox, rcenvox] = estorient(voxtoras, bcenvox, ...
-    ecenvox, bmask)
+function [fettoras, lcenmm, rcenmm] = estorient(voxtoras, bcenvox, ecenvox, ...
+    bmask)
 
 % Matrix that rotates x-y-z onto major-middle-minor axes.
 [~,semivox,rotvox] = fitellipse(bmask);
@@ -13,11 +13,9 @@ rotvox = rotvox(:,order);
 rotvox = sign(det(rotvox)) * rotvox; % Force proper rotation matrix.
 
 % Convert to world space.
-lcenvox =  ecenvox(1,:);
-rcenvox =  ecenvox(2,:);
 bcenmm = voxtoras * [bcenvox 1]';
-lcenmm = voxtoras * [lcenvox 1]';
-rcenmm = voxtoras * [rcenvox 1]';
+lcenmm = voxtoras * [ecenvox(1,:) 1]';
+rcenmm = voxtoras * [ecenvox(2,:) 1]';
 bcenmm = bcenmm(1:3);
 lcenmm = lcenmm(1:3);
 rcenmm = rcenmm(1:3);
@@ -49,8 +47,7 @@ end
 if dot(normal, fh) > 0 % HF pointing towards side of eyes, incorrecly.
     fh = -fh;
     lr = -lr;
-    [lcenmm, rcenmm] = deal(rcenmm, lcenmm); %#ok
-    [lcenvox, rcenvox] = deal(rcenvox, lcenvox);
+    [lcenmm, rcenmm] = deal(rcenmm, lcenmm);
 end
 
 % Transform from brain to world.
