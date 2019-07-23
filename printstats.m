@@ -14,13 +14,14 @@ for i = 1:numdat
     mri = MRIread(data{ind}); % FreeSurfer.
     mri.vol = permute(mri.vol, [2 1 3 4]);
     worldmat = mri.vox2ras1;
-    [b_autvox,e_autvox,bmask] = landmarks(mri, ga(ind));
-	% alignbrain(mri, recongeo(worldmat, b_autvox, e_autvox, bmask));
+    [b_aut,e_aut,bmask] = landmarks(mri, ga(ind));
+    % fettoras = estorient(worldmat, b_aut, e_aut, bmask);
+	% alignbrain(mri, fettoras);
     
     % Transform to RAS.
-    b_aut = worldmat * [b_autvox 1]';
-    e1aut = worldmat * [e_autvox(1,:) 1]';
-    e2aut = worldmat * [e_autvox(2,:) 1]';
+    b_aut = worldmat * [b_aut 1]';
+    e1aut = worldmat * [e_aut(1,:) 1]';
+    e2aut = worldmat * [e_aut(2,:) 1]';
     b_man = worldmat * [b_manvox{ind} 1]';
     e1man = worldmat * [e1manvox{ind} 1]';
     e2man = worldmat * [e2manvox{ind} 1]';

@@ -1,5 +1,7 @@
-% Reconstruct fetal cordinate system and return tranfrom from it to RAS space.
-function fetaltoras = recongeo(voxtoras, bcenvox, ecenvox, bmask)
+% Reconstruct fetal cordinate system and return tranfrom from it to RAS
+% space. Attempt to fix left/right eye labels if necessary.
+function [fettoras, lcenvox, rcenvox] = estorient(voxtoras, bcenvox, ...
+    ecenvox, bmask)
 
 % Matrix that rotates x-y-z onto major-middle-minor axes.
 [~,semivox,rotvox] = fitellipse(bmask);
@@ -11,15 +13,19 @@ rotvox = rotvox(:,order);
 rotvox = sign(det(rotvox)) * rotvox; % Force proper rotation matrix.
 
 % Convert to world space.
+lcenvox =  ecenvox(1,:);
+rcenvox =  ecenvox(2,:);
 bcenmm = voxtoras * [bcenvox 1]';
-ecenmm = voxtoras * [ecenvox'; 1 1];
+lcenmm = voxtoras * [lcenvox 1]';
+rcenmm = voxtoras * [rcenvox 1]';
 bcenmm = bcenmm(1:3);
-ecenmm = ecenmm(1:3,:);
+lcenmm = lcenmm(1:3);
+rcenmm = rcenmm(1:3);
 
 % Anatomical axes: derive HF from LR and AP, re-estimate AP (first LR/AP not
 % exactly perpendicular), re-estimate LR - to obtain proper rotation matrix.
-lr = ecenmm(:,2) - ecenmm(:,1);
-pa = 0.5 * (ecenmm(:,2)-bcenmm + ecenmm(:,1)-bcenmm);
+lr = rcenmm - lcenmm;
+pa = 0.5 * (rcenmm-bcenmm + lcenmm-bcenmm);
 lr = lr / norm(lr);
 pa = pa / norm(pa);
 fh = cross(lr, pa); % RAS space.
@@ -43,11 +49,13 @@ end
 if dot(normal, fh) > 0 % HF pointing towards side of eyes, incorrecly.
     fh = -fh;
     lr = -lr;
+    [lcenmm, rcenmm] = deal(rcenmm, lcenmm); %#ok
+    [lcenvox, rcenvox] = deal(rcenvox, lcenvox);
 end
 
 % Transform from brain to world.
-fetaltoras = eye(4);
-fetaltoras(1:3,1:3) = [lr pa fh];
-incline = rotmat(30 .* pi/180); % Rotate from eyes around LR axis.
+fettoras = eye(4);
+fettoras(1:3,1:3) = [lr pa fh];
+incline = rotmat(30 .* pi/180); % Rotate from eyes around LR.
 shift = [eye(4,3) [bcenmm; 1]];
-fetaltoras = shift * fetaltoras * incline;
+fettoras = shift * fettoras * incline;

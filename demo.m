@@ -28,12 +28,12 @@ mri.vol = permute(mri.vol, [2 1 3 4]);
 wait('Slices of input image', ['"' data{imnum} '"']);
 showmask(stretchcon(mri.vol));
 
-% Detect landmarks and reconstruct geometry.
-[bcenvox,ecenvox,bmask] = landmarks(mri, ga(imnum), doplot);
-fetaltoras = recongeo(mri.vox2ras1, bcenvox, ecenvox, bmask);
+% Detect landmarks and estimate orientation.
+[bvox,evox,bmask] = landmarks(mri, ga(imnum), doplot);
+fettoras = estorient(mri.vox2ras1, bvox, evox, bmask);
 
 % Resample in anatomical space and save for inspection. 
 outfile = 'out.nii';
 wait('Resampling in anatomical space');
-alignbrain(mri, fetaltoras, outfile);
+alignbrain(mri, fettoras, outfile);
 fprintf('Done\n');
