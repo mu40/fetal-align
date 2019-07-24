@@ -60,7 +60,8 @@ keep = keep & semi(:,1)*vsz(1) < ofd/2 * par.maxsemi1;
 keep = keep & inside-outside > par.minfill1;
 
 % Mean-shift clustering: remove near-duplicate points first.
-par = setdefault(par, 'minsep1', 1, 'diam1', 1, 'steptol1', 0.1);
+par = setdefault(par, 'clustfwhm1', 0.5, 'gridstep1', 1, 'minsep1', 1, ...
+    'steptol1', 0.1);
 points = [cen(keep,:) snum(keep)] .* vsz;
 i = 1;
 while i <= size(points,1)
@@ -69,17 +70,17 @@ while i <= size(points,1)
     points(ind,:) = [];
     i = i + 1;
 end
-[clusters,numclust] = meanshift(points, par.diam1*ofd, par.steptol1, ...
-    par.minsep1);
+[clusters,numclust] = meanshift(points, par.clustfwhm1*ofd, ...
+    par.gridstep1*ofd, par.steptol1, par.minsep1);
 if isfield(doplot, 'clust1') && doplot.clust1
     wait('Brain localization: mean-shift clustering of MSER centers', ...
         'before cluster selection');
-    showclust(points, clusters, par.diam1*ofd);
+    showclust(points, clusters, par.gridstep1*ofd);
 end
 
 % Cluster selection.
-par = setdefault(par, 'rad1', 1);
-len = ofd/2 * par.rad1;
+par = setdefault(par, 'clustrad1', 1);
+len = ofd/2 * par.clustrad1;
 xyz = ndarray([1 1 1], dim) .* vsz;
 ind1d = reshape(1:prod(dim), dim);
 points = [cen snum] .* vsz;
