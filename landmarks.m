@@ -26,13 +26,14 @@ dat = dat(low(1):upp(1), low(2):upp(2), low(3):upp(3));
 dim = size(dat);
 
 % Pre-processing.
+par = setdefault(par, 'nufwhm', 20, 'dogfwhm', 5, 'dogratio', 2);
 [nuc, pre, flt] = deal(zeros(dim));
 fwhm = 5 ./ vsz(1:2);
 for i = 1:dim(3)
     im = dat(:,:,i);
-    im = im ./ gaussblur(im, 20./vsz(1:2));
+    im = im ./ gaussblur(im, par.nufwhm./vsz(1:2));
     nuc(:,:,i) = im;
-    tmp = gaussblur(im, 2*fwhm) - gaussblur(im, fwhm);
+    tmp = gaussblur(im, par.dogratio*par.dogfwhm) - gaussblur(im, par.dogfwhm);
     tmp(tmp<0) = 0;
     tmp = 1 - stretchcon(tmp);
     flt(:,:,i) = tmp;
@@ -80,7 +81,7 @@ end
 
 % Cluster selection.
 par = setdefault(par, 'clustrad1', 1);
-len = ofd/2 * par.clustrad1;
+radius = ofd/2 * par.clustrad1;
 xyz = ndarray([1 1 1], dim) .* vsz;
 ind1d = reshape(1:prod(dim), dim);
 points = [cen snum] .* vsz;
@@ -89,18 +90,18 @@ linedist = cell(numclust, 1);
 for i = 1:numclust
     centroid = clusters(i,:);
     dist = sqrt(sum((centroid-points).^2, 2));
-    ind = find(keep & dist<len);
+    ind = find(keep & dist<radius);
     volmask = false(dim);
     for j = ind'
         volmask(:,:,snum(j)) = volmask(:,:,snum(j)) | bw{j};
     end
-    low = floor((centroid-len) ./ vsz);
-    upp = ceil((centroid+len) ./ vsz);
+    low = floor((centroid-radius) ./ vsz);
+    upp = ceil((centroid+radius) ./ vsz);
     low = max(1, low);
     upp = min(dim, upp);
     subset = ind1d(low(1):upp(1),low(2):upp(2),low(3):upp(3));
     sphere = false(dim);
-    insphere = sqrt(sum((xyz(subset,:)-centroid).^2, 2)) < len;
+    insphere = sqrt(sum((xyz(subset,:)-centroid).^2, 2)) < radius;
     sphere(subset) = insphere;
     numvoxin(i) = nnz(sphere & volmask);
     numvoxout(i) = nnz(~sphere & volmask);
@@ -115,7 +116,7 @@ centroid = clusters(order(1),:);
 linedist = linedist{order(1)};
 dist = sqrt(sum((centroid-points(keep,:)).^2, 2));
 keeppreclust = keep; %#ok
-keep(keep) = dist < len;
+keep(keep) = dist < radius;
 
 % Filter distance from line fit.
 zscore = (linedist-mean(linedist)) / std(linedist);
