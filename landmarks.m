@@ -28,12 +28,12 @@ dim = size(dat);
 % Pre-processing.
 par = setdefault(par, 'nufwhm', 20, 'dogfwhm', 5, 'dogratio', 2);
 [nuc, pre, flt] = deal(zeros(dim));
-fwhm = 5 ./ vsz(1:2);
+fwhm = par.dogfwhm ./ vsz(1:2);
 for i = 1:dim(3)
     im = dat(:,:,i);
     im = im ./ gaussblur(im, par.nufwhm./vsz(1:2));
     nuc(:,:,i) = im;
-    tmp = gaussblur(im, par.dogratio*par.dogfwhm) - gaussblur(im, par.dogfwhm);
+    tmp = gaussblur(im, par.dogratio*fwhm) - gaussblur(im, fwhm);
     tmp(tmp<0) = 0;
     tmp = 1 - stretchcon(tmp);
     flt(:,:,i) = tmp;
@@ -284,14 +284,14 @@ boxloc = boxloc(1:3)';
 % MSER detection and filtering.
 par = setdefault(par, 'maxratio3', 1.5, 'minarea3', 0.5, 'maxarea3', 1.1, ...
     'maxsemi3', 1.3, 'minfill3', 0.8, 'mindist3', 0.5, 'maxdist3', 1.5, ...
-    'mindrop3', 0.5, 'int3', 0.5);
+    'mindrop3', 0.5, 'int3', 0.5, 'ribbon3', 1.5);
 refarea = pi * (odiam/2)^2 / prod(boxvsz(1:2)); % In voxels.
 [bw, numbw, snum] = slcmser(boxdat, 5, refarea*par.minarea3, ...
     refarea*par.maxarea3);
 [cen,semi,rot,ell,inside,outside] = fitellipse(bw); %#ok
 ratio = semi(:,1) ./ semi(:,2);
 area = pi * prod(semi, 2);
-[~,~,~,ellbig] = fitellipse(bw, 1.5);
+[~,~,~,ellbig] = fitellipse(bw, par.ribbon3);
 drop = zeros(numbw, 1);
 for i = 1:numbw
     im = boxdat(:,:,snum(i));
