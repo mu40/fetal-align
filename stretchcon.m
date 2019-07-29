@@ -5,6 +5,9 @@ if nargin() < 2
 end
 
 bounds = percentile(im(~isnan(im)), pctile);
-im = (im-bounds(1)) / (bounds(2)-bounds(1));
+im = im-bounds(1);
+if diff(bounds) > 0
+    im = im / (bounds(2)-bounds(1));
+end
 im(im<0) = 0;
 im(im>1) = 1;
