@@ -46,7 +46,7 @@ for i = 1:nummask
     [evec,eval] = eig(mi, 'vector');
     [eval,order] = sort(eval, 'descend');
     rot = evec(:,order);
-    semi = 2 * sqrt(eval);
+    semi = 2 * real(sqrt(eval)); % Tiny imaginary part of 2D structure in 3D.
     
     % Mask of ellipse.
     halflen = semi(1);
