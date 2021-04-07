@@ -1,6 +1,8 @@
 % Deviation between automatically and manually determined landmarks.
 
-addpath freesurfer
+if ~isdeployed()
+    addpath freesurfer
+end
 [data,ga,b_manvox,e1manvox,e2manvox] = loaddata();
 
 numdat = numel(data);
@@ -8,13 +10,16 @@ successful = setdiff(1:numdat, [34 41]); % Exclude failures.
 numdat = numel(successful);
 [magrot,magtra,mag_e1,mag_e2] = deal(zeros(numdat, 1));
 [xtra,ytra,ztra,xrot,yrot,zrot] = deal(zeros(numdat, 1));
+t = zeros(numdat, 1);
 for i = 1:numdat
     fprintf('Processing dataset %d/%d\n', i, numdat);
     ind = successful(i);
     mri = MRIread(data{ind}); % FreeSurfer.
     mri.vol = permute(mri.vol, [2 1 3 4]);
     worldmat = mri.vox2ras1;
+    tic;
     [b_aut,e_aut,bmask] = landmarks(mri, ga(ind));
+    t(i) = toc;
     % fettoras = estorient(worldmat, b_aut, e_aut, bmask);
 	% alignbrain(mri, fettoras);
     
@@ -56,6 +61,7 @@ end
 
 fprintf('             Min    Max   Mean    Std\n\n');
 stat = @(p)[min(abs(p)) max(abs(p)) mean(abs(p)) std(abs(p))];
+fprintf('Runtime:  '); fprintf('%6.2f ',stat(t)); fprintf('\n');
 fprintf('T(x) abs: '); fprintf('%6.2f ',stat(xtra)); fprintf('\n');
 fprintf('T(y) abs: '); fprintf('%6.2f ',stat(ytra)); fprintf('\n');
 fprintf('T(z) abs: '); fprintf('%6.2f ',stat(ztra)); fprintf('\n');

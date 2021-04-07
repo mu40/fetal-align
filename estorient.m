@@ -8,7 +8,7 @@ function [fettoras, lcenmm, rcenmm] = estorient(voxtoras, bcenvox, ecenvox, ...
 voxsize = sqrt(sum(voxtoras(1:3,1:3).^2));
 evecmm = diag(voxsize) * rotvox * diag(semivox);
 semimm = sqrt(sum(evecmm.^2));
-[~,order] = sort(semimm, 'desc');
+[~,order] = sort(semimm, 'descend');
 rotvox = rotvox(:,order);
 rotvox = sign(det(rotvox)) * rotvox; % Force proper rotation matrix.
 

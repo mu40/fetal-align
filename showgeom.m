@@ -5,7 +5,7 @@ function showgeom(brainmask, ecenvox, voxsize, odiam)
 [bcenvox,bsemivox,rotvox] = fitellipse(brainmask);
 evecmm = diag(voxsize) * rotvox * diag(bsemivox);
 bsemimm = sqrt(sum(evecmm.^2));
-[bsemimm,order] = sort(bsemimm, 'desc');
+[bsemimm,order] = sort(bsemimm, 'descend');
 rotmm = rotvox(:,order);
 rotmm = sign(det(rotmm)) * rotmm; % Force proper rotation matrix.
 bcenmm = bcenvox .* voxsize;

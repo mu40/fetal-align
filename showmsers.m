@@ -7,12 +7,11 @@ if nargin() > 4
 end
 sz = size(vol);
 
-[cen,semi,rot,~,fill,over] = fitellipse(bw);
+[cen,semi,rot,~,dm] = fitellipse(bw);
 ratio = semi(:,1) ./ semi(:,2);
 area = prod(2*semi/inplanerefdiam, 2); % Fraction of expected size.
 diam = 2*semi(:,1) / inplanerefdiam;
-format = ['Slice: %2d, ratio: %.2f, area: %.2f, in: %.2f, out: %.2f, ' ...
-	'semi: %.2f\n'];
+format = 'Slice: %2d, ratio: %.2f, area: %.2f, dice: %.2f, semi: %.2f\n';
 
 reset(clf());
 colormap gray
@@ -37,7 +36,7 @@ for i = 1:sz(3)
         hold off
         axis('image', 'off', [0 sz(2) 0 sz(1)]);
         title(sprintf('%d/%d', i, sz(3)));
-        fprintf(format, i, ratio(j), area(j), fill(j), over(j), diam(j));
+        fprintf(format, i, ratio(j), area(j), dm(j), diam(j));
         drawnow();
     end
     if ~isempty(j)
