@@ -28,7 +28,8 @@ algorithm seeks to address this inefficient workflow.
 ## Requirements
 
 MATLAB version 9.1/R2016b or later is required. If needed, the pre-compiled MEX
-function for MSER detection can be rebuilt by running `mex mser.cpp` in MATLAB.
+function for MSER detection can be rebuilt by running
+`mex -output mser mser/mser.cpp mexmser.cpp` in MATLAB.
 
 ## Where to start
 
