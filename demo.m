@@ -1,8 +1,12 @@
 % Demo showcasing fetal head-pose detection.
-function demo(imnum)
+function demo(imnum, outfile)
 
 if nargin() < 1
     imnum = 1;
+end
+
+if nargin() < 2
+    outfile = [];
 end
 
 if ~isdeployed()
@@ -38,7 +42,6 @@ showmask(stretchcon(mri.vol));
 fettoras = estorient(mri.vox2ras1, bvox, evox, bmask);
 
 % Resample in anatomical space and save for inspection. 
-outfile = 'out.nii';
 wait('Resampling in anatomical space');
 alignbrain(mri, fettoras, outfile);
 fprintf('Done\n');
