@@ -4,6 +4,7 @@ function demo(imnum, outfile)
 if nargin() < 1
     imnum = 1;
 end
+imnum = str2double(imnum);
 
 if nargin() < 2
     outfile = [];
