@@ -52,8 +52,8 @@ information about FreeSurfer see https://surfer.nmr.mgh.harvard.edu.
 
 ## Further reading
 
-A detailed description of the pipeline is freely available online. If you use
-part of the code or data provided, please consider citing it:
+A detailed description of the pipeline is freely available online. If you find
+the code or data useful, please consider citing:
 
 [Rapid head-pose detection for automated slice prescription of fetal-brain MRI](https://doi.org/10.1002/ima.22563).
 Hoffmann M, Abaci Turk E, Gagoski B, Morgan L, Wighton P, Tisdall MD, Reuter M, Adalsteinsson E, Grant PE, Wald LL, van der Kouwe AJW.
