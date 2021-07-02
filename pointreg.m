@@ -1,4 +1,5 @@
-% Find transformation from point pattern X to Y (Umeyama et al., 1991).
+% Find transform from point cloud X to Y: Umeyama et al., 1991. The sets must
+% be of equal size and the points must correspond across sets X and Y.'''
 function [rot,tra,sca,err] = pointreg(setx, sety, scaling)
 
 if nargin() < 3
@@ -11,10 +12,7 @@ meanx = mean(setx, 2);
 meany = mean(sety, 2);
 varx = sum(sum((setx-meanx).^2, 1)) / numpts;
 vary = sum(sum((sety-meany).^2, 1)) / numpts;
-covmat = eye(3);
-for i = 1:numpts
-    covmat = covmat + (sety(:,1)-meany) * (setx(:,1)-meanx)' / numpts;
-end
+covmat = (sety - meany) * (setx - meanx)' / numpts;
 [u,d,v] = svd(covmat);
 
 s = eye(numdim);
@@ -31,7 +29,7 @@ end
 rot = u * rots * v';
 
 if scaling
-	sca = 1/varx * trace(d*s);
+	sca = trace(d*s) / varx;
 else
 	sca = 1;
 end
