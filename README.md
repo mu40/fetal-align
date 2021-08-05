@@ -57,13 +57,16 @@ the code or data useful, please consider citing:
 
 [Rapid head-pose detection for automated slice prescription of fetal-brain MRI](https://doi.org/10.1002/ima.22563).
 Hoffmann M, Abaci Turk E, Gagoski B, Morgan L, Wighton P, Tisdall MD, Reuter M, Adalsteinsson E, Grant PE, Wald LL, van der Kouwe AJW.
-International Journal of Imaging Systems and Technology (IMA), in press, 2021.
+International Journal of Imaging Systems and Technology (IMA), 31 (3), pp 1136-1154, 2021.
 
 ```bibtex
 @article{hoffmann2021rapid,
     title={Rapid head-pose detection for automated slice prescription of fetal-brain MRI},
     author={Hoffmann, Malte and Abaci Turk, Esra and Gagoski, Borjan and Morgan, Leah and Wighton, Paul and Tisdall, M Dylan and Reuter, Martin and Adalsteinsson, Elfar and Grant, P Ellen and Wald, Lawrence L and van der Kouwe, André JW},
     journal={International Journal of Imaging Systems and Technology},
+    volume={31},
+    number={3},
+    pages={1136-1154},
     year={2021},
     publisher={Wiley Online Library}
 }
